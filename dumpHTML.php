@@ -30,6 +30,7 @@ php dumpHTML.php [options...]
 	--udp-profile <N>    profile 1/N rendering operations using ProfilerSimpleUDP
 	--oom-adj <N>        set /proc/<pid>/oom_adj
 	--show-titles        write each article title to stdout
+	--munge-title <HOW>  available munging algorithms: none, md5, windows
     --group <group>      use the specified user group to read articles
 
 ENDS;
@@ -61,6 +62,7 @@ if ( $IP === false ) {
 }
 require_once( $IP."/maintenance/commandLine.inc" );
 require_once( dirname(__FILE__)."/dumpHTML.inc" );
+require_once( dirname(__FILE__)."/MungeTitle.inc" );
 require_once( dirname(__FILE__)."/SkinOffline.php" );
 
 error_reporting( E_ALL & (~E_NOTICE) );
@@ -126,6 +128,7 @@ $wgHTMLDump = new DumpHTML( array(
 	'udpProfile' => $options['udp-profile'],
 	'showTitles' => $options['show-titles'],
 	'group' => $options['group'],
+	'mungeTitle' => $options['munge-title'],
 ));
 
 $wgHTMLDump->setupDestDir();

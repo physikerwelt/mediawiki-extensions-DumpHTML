@@ -89,6 +89,7 @@ class DumpHTML {
 		foreach ( $settings as $var => $value ) {
 			$this->$var = $value;
 		}
+		$this->mungeTitle = new MungeTitle($this->mungeTitle);
 		$this->extdir = dirname( __FILE__ );
 	}
 
@@ -243,6 +244,16 @@ class DumpHTML {
 		fwrite( $file, $text );
 		fclose( $file );
 		print "\n";
+	}
+
+	function onParserAfterTidy($parser, &$text)
+	{
+		// TODO it would be much nicer to do this during page generation
+		# post-process links because "File:" linking doesn't expose hooks.
+		$munge = create_function('$m', 'return $m["pre"].'.$this->mungeTitle->getMethod().'($m["rel"]).$m["post"];');
+		$text = preg_replace_callback('!(?<pre>src="[^"]*/?images/(archive|thumb|))(?<rel>[^"]+)(?<post>["])!Ui', $munge, $text);
+		// TODO image description page, thumbnails
+		return true;
 	}
 
 	function doImageDescriptions() {
@@ -517,19 +528,6 @@ class DumpHTML {
 		wfProfileIn( __METHOD__ );
 		$filename = $this->getHashedFilename( $title );
 
-		# Temporary hack for current dump, this should be moved to
-		# getFriendlyName() at the earliest opportunity.
-		#
-		# Limit filename length to 255 characters, so it works on ext3.
-		# Titles are in fact limited to 255 characters, but dumpHTML
-		# adds a suffix which may put them over the limit.
-		$length = strlen( $filename );
-		if ( $length > 255 ) {
-			print "Warning: Filename too long ($length bytes). Skipping.\n";
-			wfProfileOut( __METHOD__ );
-			return;
-		}
-
 		$fullName = "{$this->dest}/$filename";
 		$fullDir = dirname( $fullName );
 
@@ -653,6 +651,7 @@ class DumpHTML {
 			$wgHooks['GetFullURL'][] =& $this;
 			$wgHooks['SiteNoticeBefore'][] =& $this;
 			$wgHooks['SiteNoticeAfter'][] =& $this;
+			$wgHooks['ParserAfterTidy'][] =& $this;
 			$this->oldArticlePath = wfExpandURL( $wgServer . $wgArticlePath, PROTO_CANONICAL );
 			$this->oldLogo = $wgLogo;
 			$this->oldRepoGroup = RepoGroup::singleton();
@@ -975,7 +974,8 @@ ENDTEXT;
 				if ( $params['gen'] == 'css' || $params['gen'] == 'js' ) {
 					$file = 'gen.' . $params['gen'];
 				} else {
-					$file = $this->getFriendlyName( $title->getPrefixedDBkey() );
+					$file = $title->getPrefixedDBkey();
+					$file = $this->mungeTitle->munge($file);
 					// Clean up Monobook.css etc.
 					$matches = array();
 					if ( preg_match( '/^(.*)\.(css|js)_[0-9a-f]{4}$/', $file, $matches ) ) {
@@ -1013,83 +1013,10 @@ ENDTEXT;
 			return 'index.html';
 		}
 
-		return 'articles/' . $this->getHashedDirectory( $title ) . '/' .
-			$this->getFriendlyName( $dbkey ) . '.html';
-	}
+		$filename = $title->getPrefixedDBkey();
+		$filename = $this->mungeTitle->munge($filename);
 
-	function getFriendlyName( $name ) {
-		global $wgLang;
-		# Replace illegal characters for Windows paths with underscores
-		$friendlyName = strtr( $name, '/\\*?"<>|~', '_________' );
-
-		# Work out lower case form. We assume we're on a system with case-insensitive
-		# filenames, so unless the case is of a special form, we have to disambiguate
-		if ( function_exists( 'mb_strtolower' ) ) {
-			$lowerCase = $wgLang->ucfirst( mb_strtolower( $name ) );
-		} else {
-			$lowerCase = ucfirst( strtolower( $name ) );
-		}
-
-		# Make it mostly unique
-		if ( $lowerCase != $friendlyName  ) {
-			$friendlyName .= '_' . substr(md5( $name ), 0, 4);
-		}
-		# Handle colon specially by replacing it with tilde
-		# Thus we reduce the number of paths with hashes appended
-		$friendlyName = str_replace( ':', '~', $friendlyName );
-
-		return $friendlyName;
-	}
-
-	/**
-	 * Get a relative directory for putting a title into
-	 *
-	 * @param $title Title
-	 */
-	function getHashedDirectory( &$title ) {
-		if ( '' != $title->getInterwiki() ) {
-			$pdbk = $title->getDBkey();
-		} else {
-			$pdbk = $title->getPrefixedDBkey();
-		}
-
-		# Find the first colon if there is one, use characters after it
-		$p = strpos( $pdbk, ':' );
-		if ( $p !== false ) {
-			$dbk = substr( $pdbk, $p + 1 );
-			$dbk = substr( $dbk, strspn( $dbk, '_' ) );
-		} else {
-			$dbk = $pdbk;
-		}
-
-		# Split into characters
-		$m = array();
-		preg_match_all( '/./us', $dbk, $m );
-
-		$chars = $m[0];
-		$length = count( $chars );
-		$dir = '';
-
-		for ( $i = 0; $i < $this->depth; $i++ ) {
-			if ( $i ) {
-				$dir .= '/';
-			}
-			if ( $i >= $length ) {
-				$dir .= '_';
-			} else {
-				$c = $chars[$i];
-				if ( ord( $c ) >= 128 || preg_match( '/[a-zA-Z0-9!#$%&()+,[\]^_`{}-]/', $c ) ) {
-					if ( function_exists( 'mb_strtolower' ) ) {
-						$dir .= mb_strtolower( $c );
-					} else {
-						$dir .= strtolower( $c );
-					}
-				} else {
-					$dir .= sprintf( "%02X", ord( $c ) );
-				}
-			}
-		}
-		return $dir;
+		return "articles/{$filename}.html";
 	}
 
 	/**
@@ -1257,6 +1184,8 @@ class DumpHTML_ProxyRepo {
 			return;
 		}
 
+		$rel = $this->dump->mungeTitle->munge($rel);
+
 		$dest = "{$this->directory}/$rel";
 		if ( is_callable( array( $this->backend, 'getZonePath' ) ) ) {
 			if ( strpos( $rel, "thumb/" ) === 0 ) { // XXX
@@ -1363,7 +1292,11 @@ class DumpHTML_ProxyFile {
 		}
 
 		$source = $this->file->getPath();
-		$dest = $this->repo->directory . '/' . $this->file->getRel();
+
+		$rel = $this->file->getRel();
+		$rel = $this->dump->mungeTitle->munge($rel);
+
+		$dest = $this->repo->directory . '/' . $rel;
 
 		if ( $this->dump->pathExists( $dest ) ) {
 			return;
