@@ -37,7 +37,7 @@ ENDS;
 
 define( 'MW_HTML_FOR_DUMP', 1 );
 
-$optionsWithArgs = array( 's', 'd', 'e', 'k', 'checkpoint', 'slice', 'udp-profile', 'oom-adj', 'group' );
+$optionsWithArgs = array( 's', 'd', 'e', 'k', 'checkpoint', 'slice', 'udp-profile', 'oom-adj', 'munge-title', 'group' );
 $options = array( 'help' );
 $profiling = false;
 
