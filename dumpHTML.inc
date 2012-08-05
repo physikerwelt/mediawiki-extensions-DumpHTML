@@ -792,11 +792,11 @@ class DumpHTML {
 		$context->setRequest( new DumpFauxRequest( $title->getLocalUrl(),
 			array( 'title' => $title->getPrefixedDbKey() ) ) );
 		$context->setTitle( $title );
+		$context->setUser( $wgUser );
 
 		// b/c
 		$wgTitle = $title;
 		$wgOut = $context->getOutput();
-		$wgUser = $context->getUser();
 		$wgRequest = $context->getRequest();
 
 		$ns = $title->getNamespace();
@@ -805,7 +805,7 @@ class DumpHTML {
 		} else {
 			$article = Article::newFromTitle( $title, $context );
 			$rt = $article->followRedirect();
-			if ( is_object( $rt ) ) {
+			if ( is_object( $rt ) && !$title->equals( $rt ) ) {
 				return $this->getRedirect( $rt );
 			} else {
 				$article->view();
@@ -966,7 +966,6 @@ ENDTEXT;
 			return true;
 		}
 
-		$url = false;
 		if ( $query != '' ) {
 			$params = array();
 			parse_str( $query, $params );
@@ -984,11 +983,20 @@ ENDTEXT;
 				}
 				$this->rawPages[$file] = array( $file, $title, $params );
 				$url = str_replace( '$1', "raw/" . wfUrlencode( $file ), $wgArticlePath );
+			} else {
+				// make all links with query params point to the live server
+				$url = wfExpandURL( $url, PROTO_CANONICAL );
+			}
+		} else {
+			if( $title->isSpecialPage() ) {
+				// special pages are not included in the dump, so keep urls to live server
+				$url = str_replace( '$1', wfUrlencode( $title->getPrefixedDBkey() ), $this->oldArticlePath );
+			} else {
+				// normal case
+				$url = str_replace( '$1', wfUrlencode( $this->getHashedFilename( $title ) ), $wgArticlePath );
 			}
 		}
-		if ( $url === false ) {
-			$url = str_replace( '$1', wfUrlencode( $this->getHashedFilename( $title ) ), $wgArticlePath );
-		}
+
 		$url .= $this->compress ? ".gz" : "";
 		return false;
 	}
@@ -1283,6 +1291,7 @@ class DumpHTML_ProxyFile {
 		if ( isset( $thumb->url ) ) {
 			$thumb->url = $this->fixURL( $thumb->url );
 		}
+		$thumb->file = $this;
 		return $thumb;
 	}
 

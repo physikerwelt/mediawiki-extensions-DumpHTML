@@ -1,3 +1,7 @@
+@import "../common/shared.css";
+@import "../common/commonElements.css";
+@import "../common/commonContent.css";
+@import "../common/commonInterface.css";
 @import "../monobook/main.css";
 
 #footer li {
