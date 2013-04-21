@@ -142,8 +142,7 @@ class SkinOfflineTemplate extends QuickTemplate {
     <?php if($this->data['userjs'    ]) { ?><script type="<?php $this->text('jsmimetype') ?>" src="<?php $this->text('userjs'    ) ?>"></script><?php } ?>
     <?php if($this->data['userjsprev']) { ?><script type="<?php $this->text('jsmimetype') ?>"><?php      $this->html('userjsprev') ?></script><?php   } ?>
   </head>
-  <body
-    <?php if($this->data['pageclass']) { ?>class="<?php $this->text('pageclass') ?>"<?php } ?>>
+  <body class="mediawiki <?php $this->text('dir') ?> <?php if($this->data['pageclass']) { $this->text('pageclass'); } ?>">
     <div id="globalWrapper">
       <div id="column-content">
 	<div id="content">
