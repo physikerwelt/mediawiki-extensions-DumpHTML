@@ -801,7 +801,7 @@ class DumpHTML {
 
 		$ns = $title->getNamespace();
 		if ( $ns == NS_SPECIAL ) {
-			SpecialPage::executePath( $title, $context );
+			SpecialPageFactory::executePath( $title, $context );
 		} else {
 			$article = Article::newFromTitle( $title, $context );
 			$rt = $article->followRedirect();
