@@ -506,7 +506,7 @@ class DumpHTML {
 			if ( !file_exists( $path ) ) {
 				$article = new Article( $ftitle );
 				$request = new FauxRequest( $params );
-				$rp = new RawPage( $article, $request );
+				$rp = new RawAction( $article, $request );
 				$text = $rp->getRawText();
 
 				print "Writing $file\n";
