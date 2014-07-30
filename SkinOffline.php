@@ -29,7 +29,7 @@ class SkinOffline extends SkinTemplate {
 		$badMessages = array( 'recentchanges-url', 'randompage-url' );
 		$badUrls = array();
 		foreach ( $badMessages as $msg ) {
-			$badUrls[] = self::makeInternalOrExternalUrl( wfMsgForContent( $msg ) );
+			$badUrls[] = self::makeInternalOrExternalUrl( wfMessage( $msg )->inContentLanguage() );
 		}
 		foreach ( $sections as $heading => $section ) {
 			if (!is_array($section)) {
@@ -68,7 +68,7 @@ class SkinOffline extends SkinTemplate {
 
 		if ( isset( $wgHTMLDump ) ) {
 			$content_actions['current'] = array(
-				'text' => wfMsg( 'currentrev' ),
+				'text' => wfMessage( 'currentrev' )->text(),
 				'href' => str_replace( '$1', wfUrlencode( $this->getTitle()->getPrefixedDBkey() ),
 					$wgHTMLDump->oldArticlePath ),
 				'class' => false
@@ -182,7 +182,7 @@ class SkinOfflineTemplate extends QuickTemplate {
 	<script type="<?php $this->text('jsmimetype') ?>"> if (window.isMSIE55) fixalpha(); </script>
 	<?php foreach ($this->data['sidebar'] as $bar => $cont) { ?>
 	<div class='portlet' id='p-<?php echo htmlspecialchars($bar) ?>'>
-	  <h5><?php $out = wfMsg( $bar ); if (wfEmptyMsg($bar, $out)) echo $bar; else echo $out; ?></h5>
+	  <h5><?php if ( wfMessage( $bar )->isDisabled() ) { echo $bar; } else { echo wfMessage( $bar )->escaped(); } ?></h5>
 	  <div class='pBody'>
 	    <ul>
 	    <?php foreach($cont as $key => $val) { ?>
