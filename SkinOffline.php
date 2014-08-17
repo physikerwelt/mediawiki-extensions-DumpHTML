@@ -14,7 +14,7 @@ if( !defined( 'MEDIAWIKI' ) )
  */
 class SkinOffline extends SkinTemplate {
 	/** Using monobook. */
-	var $template  = 'SkinOfflineTemplate';
+	public $template  = 'SkinOfflineTemplate';
 
 	function setupTemplate( $className, $repository = false, $cache_dir = false ) {
 		global $wgFavicon, $wgStylePath;
