@@ -1160,8 +1160,9 @@ class DumpHTML_ProxyRepo {
 		$this->directory = $directory;
 		$this->url = $url;
 		$this->name = $backend->getName();
-		$this->backend->thumbScriptUrl = false;
-		$this->backend->transformVia404 = false;
+		//TODO fix those line
+		//$this->backend->thumbScriptUrl = false;
+		//$this->backend->transformVia404 = false;
 		$this->backendUrl = $backend->getZoneUrl( 'public' );
 	}
 
