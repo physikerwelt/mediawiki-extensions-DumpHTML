@@ -46,7 +46,7 @@ if ( $profiling ) {
 	function wfSetupDump() {
 		global $wgProfileToDatabase, $wgProfileSampleRate;
 		// Override disabled profiling in maintenance scripts
-		Profiler::setInstance( new Profiler() );
+		Profiler::setInstance( Profiler::instance() );
 		$wgProfileToDatabase = false;
 		$wgProfileSampleRate = 1;
 	}
