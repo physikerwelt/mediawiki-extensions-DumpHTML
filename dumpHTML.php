@@ -31,7 +31,8 @@ php dumpHTML.php [options...]
 	--oom-adj <N>        set /proc/<pid>/oom_adj
 	--show-titles        write each article title to stdout
 	--munge-title <HOW>  available munging algorithms: none, md5, windows
-    --group <group>      use the specified user group to read articles
+	--group <group>      use the specified user group to read articles
+	--ntcir-format       uses the NTCIR specific output format (no headers, and oldID as file names)
 
 ENDS;
 
@@ -128,8 +129,7 @@ $wgHTMLDump = new DumpHTML( array(
 	'udpProfile' => $options['udp-profile'],
 	'showTitles' => $options['show-titles'],
 	'group' => $options['group'],
-	'mungeTitle' => $options['munge-title'],
-));
+	'mungeTitle' => $options['munge-title'], 'ntcirFormat' => $options['ntcir-format'], ));
 
 $wgHTMLDump->setupDestDir();
 

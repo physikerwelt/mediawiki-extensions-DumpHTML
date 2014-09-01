@@ -82,6 +82,9 @@ class DumpHTML {
 	# Debugging options
 	var $showTitles = false;
 
+	# ntcirFormat names articles 123456.html where 123456 is $oldID
+	protected $ntcirFormat;
+
 	# Extension version
 	const VERSION = '2.0';
 
@@ -808,12 +811,16 @@ class DumpHTML {
 			if ( is_object( $rt ) && !$title->equals( $rt ) ) {
 				return $this->getRedirect( $rt );
 			} else {
-				$article->view();
+				if ( $this->ntcirFormat ) {
+					$article->render();
+					return $context->getOutput()->mBodytext;
+				} else {
+					$article->view();
+				}
 			}
 		}
 
 		ob_start();
-		$context->getSkin()->outputPage( $context->getOutput() );
 		$text = ob_get_contents();
 		ob_end_clean();
 
@@ -1009,6 +1016,11 @@ ENDTEXT;
 	function getHashedFilename( &$title ) {
 		if ( !$title ) {
 			throw new MWException( 'Invalid $title parameter to '.__METHOD__ );
+		}
+		if ( $this->ntcirFormat ) {
+			$oldId = $title->getLatestRevID();
+			$filename = sprintf( "%05d", $oldId );
+			return "articles/{$filename}.html";
 		}
 		if ( '' != $title->mInterwiki ) {
 			$dbkey = $title->getDBkey();
